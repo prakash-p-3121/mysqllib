@@ -4,12 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
 )
 
-func CreateDatabaseConnection(databaseHost, port, databaseName string) (*sql.DB, error) {
-	hostPortDatabase := fmt.Sprintf("%s:%s@/%s", databaseHost, port, databaseName)
-	log.Println("hostPortDatabase=", hostPortDatabase)
+func CreateDatabaseConnection(cfg MySQLCfg) (*sql.DB, error) {
+	hostPortDatabase := fmt.Sprintf("%s:%d@/%s", cfg.DatabaseName, cfg.Port, cfg.DatabaseName)
 	db, err := sql.Open("mysql", hostPortDatabase)
 	if err != nil {
 		panic(err)
