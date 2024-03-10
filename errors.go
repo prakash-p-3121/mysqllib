@@ -1,7 +1,9 @@
 package mysqllib
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -19,4 +21,16 @@ func IsConflictError(err error) bool {
 		return true
 	}
 	return false
+}
+
+func RollbackTx(tx *sql.Tx, err error) error {
+	if err == nil {
+		return nil
+	}
+	errRollback := tx.Rollback()
+	if errRollback != nil {
+		return fmt.Errorf("RollbackErr : %w \nCurrentErr 2: %w",
+			errRollback, err)
+	}
+	return err
 }
