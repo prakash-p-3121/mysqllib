@@ -16,6 +16,7 @@ func getMySQLCfg(filePath string) (*MySQLCfg, error) {
 		fmt.Println("Error reading file:", err)
 		return nil, err
 	}
+	log.Println("cfg=" + string(data))
 	var cfg MySQLCfg
 	err = tomllib.Serialize(data, &cfg)
 	if err != nil {
