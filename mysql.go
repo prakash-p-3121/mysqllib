@@ -35,7 +35,7 @@ func CreateDatabaseConnection(cfgPath string) (*sql.DB, error) {
 		cfg.HostAddr,
 		cfg.Port,
 		cfg.DatabaseName)
-
+	log.Println("connectionStr=" + connectionString)
 	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		panic(err)
