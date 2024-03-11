@@ -29,6 +29,11 @@ func CreateDatabaseConnection(cfgPath string) (*sql.DB, error) {
 	if err != nil {
 		panic(err)
 	}
+	log.Println(cfg.UserName)
+	log.Println(cfg.Password)
+	log.Println(cfg.HostAddr)
+	log.Println(cfg.DatabaseName)
+	log.Println(cfg.Password)
 
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.UserName,
 		cfg.Password,
