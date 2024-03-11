@@ -27,8 +27,14 @@ func CreateDatabaseConnection(cfgPath string) (*sql.DB, error) {
 	if err != nil {
 		panic(err)
 	}
-	hostPortDatabase := fmt.Sprintf("%s:%d@/%s", cfg.DatabaseName, cfg.Port, cfg.DatabaseName)
-	db, err := sql.Open("mysql", hostPortDatabase)
+
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.UserName,
+		cfg.Password,
+		cfg.HostAddr,
+		cfg.Port,
+		cfg.DatabaseName)
+
+	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		panic(err)
 	}
