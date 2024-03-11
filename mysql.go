@@ -6,6 +6,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prakash-p-3121/tomllib"
 	"io/ioutil"
+	"log"
+	"time"
 )
 
 func getMySQLCfg(filePath string) (*MySQLCfg, error) {
@@ -37,6 +39,21 @@ func CreateDatabaseConnection(cfgPath string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		panic(err)
+	}
+	return db, nil
+}
+
+func CreateDatabaseConnectionWithRetry(cfgPath string) (*sql.DB, error) {
+	var err error
+	var db *sql.DB
+	for i := 1; i <= 10; i++ {
+		db, err = CreateDatabaseConnection(cfgPath)
+		if err != nil {
+			log.Println(err)
+			time.Sleep(time.Duration(1) * time.Second)
+			continue
+		}
+		return db, err
 	}
 	return db, nil
 }
