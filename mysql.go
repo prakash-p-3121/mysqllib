@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	database_clustermgt_client "github.com/prakash-p-3121/database-clustermgt-client"
+	model "github.com/prakash-p-3121/database-clustermgt-model"
 	"github.com/prakash-p-3121/tomllib"
 	"io/ioutil"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -25,16 +28,22 @@ func getMySQLCfg(filePath string) (*MySQLCfg, error) {
 	return &cfg, nil
 }
 
-func CreateDatabaseConnection(cfgPath string) (*sql.DB, error) {
-	cfg, err := getMySQLCfg(cfgPath)
+func CreateDatabaseConnectionByShard(cfg *model.DatabaseShard) (*sql.DB, error) {
+
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.UserName,
+		cfg.Password,
+		cfg.IPAddress,
+		cfg.Port,
+		cfg.DatabaseName)
+	log.Println("connectionStr=" + connectionString)
+	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		panic(err)
 	}
-	log.Println(cfg.UserName)
-	log.Println(cfg.Password)
-	log.Println(cfg.HostAddr)
-	log.Println(cfg.DatabaseName)
-	log.Println(cfg.Password)
+	return db, nil
+}
+
+func CreateDatabaseConnectionByCfg(cfg *MySQLCfg) (*sql.DB, error) {
 
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.UserName,
 		cfg.Password,
@@ -49,11 +58,15 @@ func CreateDatabaseConnection(cfgPath string) (*sql.DB, error) {
 	return db, nil
 }
 
-func CreateDatabaseConnectionWithRetry(cfgPath string) (*sql.DB, error) {
+func CreateDatabaseConnectionWithRetryByCfg(cfgPath string) (*sql.DB, error) {
 	var err error
 	var db *sql.DB
+	cfgPtr, err := getMySQLCfg(cfgPath)
+	if err != nil {
+		panic(err)
+	}
 	for i := 1; i <= 10; i++ {
-		db, err = CreateDatabaseConnection(cfgPath)
+		db, err = CreateDatabaseConnectionByCfg(cfgPtr)
 		if err != nil {
 			log.Println(err)
 			time.Sleep(time.Duration(1) * time.Second)
@@ -62,6 +75,41 @@ func CreateDatabaseConnectionWithRetry(cfgPath string) (*sql.DB, error) {
 		return db, err
 	}
 	return db, nil
+}
+
+func CreateDatabaseConnectionWithRetryByShard(shardPtr *model.DatabaseShard) (*sql.DB, error) {
+	var err error
+	var db *sql.DB
+
+	for i := 1; i <= 10; i++ {
+		db, err = CreateDatabaseConnectionByShard(shardPtr)
+		if err != nil {
+			log.Println(err)
+			time.Sleep(time.Duration(1) * time.Second)
+			continue
+		}
+		return db, err
+	}
+	return db, nil
+}
+
+func CreateShardConnectionsWithRetry(tableList []string) (*sync.Map, error) {
+	var shardIDToDatabaseConnectionMap sync.Map
+	client := database_clustermgt_client.NewDatabaseClusterMgtClient("127.0.0.1", 3001)
+	for _, tableName := range tableList {
+		shardPtrList, appErr := client.FindAllShardsByTable(tableName)
+		if appErr != nil {
+			panic(appErr)
+		}
+		for _, shardPtr := range shardPtrList {
+			db, err := CreateDatabaseConnectionWithRetryByShard(shardPtr)
+			if appErr != nil {
+				panic(err)
+			}
+			shardIDToDatabaseConnectionMap.Store(shardPtr.ID, db)
+		}
+	}
+	return &shardIDToDatabaseConnectionMap, nil
 }
 
 func CloseDatabaseConnection(db *sql.DB) error {
