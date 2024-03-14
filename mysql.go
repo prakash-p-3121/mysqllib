@@ -6,9 +6,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	database_clustermgt_client "github.com/prakash-p-3121/database-clustermgt-client"
 	model "github.com/prakash-p-3121/database-clustermgt-model"
+	"github.com/prakash-p-3121/errorlib"
 	"github.com/prakash-p-3121/tomllib"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -110,6 +112,18 @@ func CreateShardConnectionsWithRetry(tableList []string) (*sync.Map, error) {
 		}
 	}
 	return &shardIDToDatabaseConnectionMap, nil
+}
+
+func RetrieveShardConnectionByShardID(shardConnectionsMap *sync.Map, shardID int64) (*sql.DB, error) {
+	databaseConnection, ok := shardConnectionsMap.Load(shardID)
+	if !ok {
+		return nil, errorlib.NewInternalServerError("database-connection-not-found-for-shard-id=" + strconv.FormatInt(shardID, 10))
+	}
+	sqlConnection, ok := databaseConnection.(*sql.DB)
+	if !ok {
+		return nil, errorlib.NewInternalServerError("invalid-database-connection-type")
+	}
+	return sqlConnection, nil
 }
 
 func CloseDatabaseConnection(db *sql.DB) error {
