@@ -108,7 +108,7 @@ func CreateShardConnectionsWithRetry(tableList []string, dbClstrMgtHost string, 
 			if appErr != nil {
 				panic(err)
 			}
-			shardIDToDatabaseConnectionMap.Store(shardPtr.ID, db)
+			shardIDToDatabaseConnectionMap.Store(*shardPtr.ID, db)
 		}
 	}
 	return &shardIDToDatabaseConnectionMap, nil
