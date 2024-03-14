@@ -95,9 +95,9 @@ func CreateDatabaseConnectionWithRetryByShard(shardPtr *model.DatabaseShard) (*s
 	return db, nil
 }
 
-func CreateShardConnectionsWithRetry(tableList []string) (*sync.Map, error) {
+func CreateShardConnectionsWithRetry(tableList []string, dbClstrMgtHost string, dbClstrMgtPort int64) (*sync.Map, error) {
 	var shardIDToDatabaseConnectionMap sync.Map
-	client := database_clustermgt_client.NewDatabaseClusterMgtClient("127.0.0.1", 3001)
+	client := database_clustermgt_client.NewDatabaseClusterMgtClient(dbClstrMgtHost, uint(dbClstrMgtPort))
 	for _, tableName := range tableList {
 		shardPtrList, appErr := client.FindAllShardsByTable(tableName)
 		if appErr != nil {
