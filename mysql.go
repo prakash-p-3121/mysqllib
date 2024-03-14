@@ -32,11 +32,11 @@ func getMySQLCfg(filePath string) (*MySQLCfg, error) {
 
 func CreateDatabaseConnectionByShard(cfg *model.DatabaseShard) (*sql.DB, error) {
 
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.UserName,
-		cfg.Password,
-		cfg.IPAddress,
-		cfg.Port,
-		cfg.DatabaseName)
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", *cfg.UserName,
+		*cfg.Password,
+		*cfg.IPAddress,
+		*cfg.Port,
+		*cfg.DatabaseName)
 	log.Println("connectionStr=" + connectionString)
 	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
